@@ -1,0 +1,49 @@
+version: '3'
+
+services:
+
+  producer:
+    image: producer
+    build: 
+      context: ./producer
+      dockerfile: Dockerfile
+    container_name: producer
+    environment:
+      - RABBIT=rabbitmq://rabbit:5672
+    depends_on:
+      rabbit:
+        condition: service_healthy
+    links: 
+        - rabbit
+    restart: on-failure
+
+  consumer:
+    image: consumer
+    build: 
+      context: ./consumer
+      dockerfile: Dockerfile
+    container_name: consumer
+    environment:
+      - RABBIT=rabbitmq://rabbit:5672
+    depends_on:
+      rabbit:
+        condition: service_healthy
+    links: 
+        - rabbit
+    restart: on-failure
+
+  rabbit:
+    image: rabbitmq
+    container_name: rabbit
+    build: 
+      context: ./rabbitmq
+      dockerfile: Dockerfile
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost:15672"]
+        interval: 30s
+        timeout: 10s
+        retries: 5
+    restart: always
